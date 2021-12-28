@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 import pandas as pd
+import mykmeanssp
 
 
 def calc_min_dist(rows, np_data, mus, curr_num_of_mus):
@@ -35,6 +36,10 @@ def k_means_pp(k, max_iter, eps, input_1_filename, input_2_filename):
     data = pd.merge(data_1, data_2, on=0)
     np_data = data.to_numpy()
 
+    merged_input = open("merged_input","w")
+    for row in np_data:
+        merged_input.write(row[1:]+"\n")
+
     rows = len(np_data)
     cols = len(np_data[0])
 
@@ -51,7 +56,7 @@ def k_means_pp(k, max_iter, eps, input_1_filename, input_2_filename):
 
     print(mus)
 
-    return 1
+    return merged_input, mus
 
 
 def submit_args():
@@ -93,14 +98,18 @@ def submit_args():
 
 
 def main():
-    file1 = "input_2_db_1.txt"
-    file2 = "input_2_db_2.txt"
+    file1 = "test_data\input_2_db_1.txt"
+    file2 = "trst_data\input_2_db_2.txt"
     # args = submit_args()
-    args = [7, 300, 0, file1, file2]
+    args = [7, 0, file1, file2]
     if args == 0:
         return 0
     k, max_iter, eps, input_1, input_2 = args
-    return k_means_pp(k, max_iter, eps, input_1, input_2)
+    
+    merged_input, line_index = k_means_pp(k, max_iter, eps, input_1, input_2)
+    final_mus =  mykmeanssp.fit(k,max_iter,eps,merged_input,line_index)
+    print(final_mus)
+    return 0
 
 
 if __name__ == '__main__':
