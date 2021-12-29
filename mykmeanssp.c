@@ -48,7 +48,7 @@ int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, d
 
 /* create an array of pointers to xi calld X
  output: read file and update  all_x_array -  an array of vertex , initial all mus to null*/
-double** initial_all_x_array(FILE* fp, int number_of_cord, int number_of_lines){
+double** read_data_from_file(FILE* fp, int number_of_cord, int number_of_lines){
      double** X = (double**)calloc(number_of_lines , sizeof(double*));
      int line_number, i;
      double* xi;
@@ -114,7 +114,7 @@ void free_memory(double** X, mu* mus, int num_of_X, int k){
 
 /* create mu_array from first K xi from X
  output: return mu_array - the firt K xi from X */
-mu* initialze_mus_array(double** X, int K, int* mus_index_line, int number_of_cord){
+mu* initialze_mus_array(FILE* mus_file, int K,int number_of_cord){
     mu* mus = (mu*)calloc(K,sizeof(mu));
     int i, word;
     for(i =0; i< K; i++){
@@ -332,26 +332,32 @@ void implementing_changes(mu* mus, int number_of_lines, change* change_array){
 }
 
 
-static int K_mean(int K, int max_iter, int epsilon, FILE* merged_input, int* mus_index_line){ 
+static int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename){
     double maxdelta = epsilon;
     int  iter =0, number_of_cords, number_of_lines, memory_alocate;
     change* change_array;
     double** X; 
     mu* mus;
-    number_of_cords = compute_number_of_cord(merged_input);
-    number_of_lines = compute_number_of_x(merged_input);
+    File* data_file, mus_file;
+
+    *data_file = fopen(data_filename,"r");
+    *mus_file = fopen(mus_filename,"r");
+
+    number_of_cords = compute_number_of_cord(data_file);
+    number_of_lines = compute_number_of_x(data_file);
+
 
     if(K > number_of_lines){
         printf("Invalid Input!\n");
         return 1;
     }
 
-    X =initial_all_x_array(merged_input,number_of_cords,number_of_lines);
+    X = read_data_from_file(data_file,number_of_cords,number_of_lines);
     if(X == NULL){
         printf("An Error Has Occurred\n");
         return 1;
     }
-    mus = initialze_mus_array(X,K,mus_index_line, number_of_cords);
+    mus = read_data_from_file(mus_file,number_of_cords,k);
     if(mus == NULL){
         printf("An Error Has Occurred\n");
         return 1;
@@ -438,6 +444,7 @@ int main(int argc, char **argv){
     double K_double, max_iter_double ;
     int K, max_iter;
     FILE* fp_in;
+    FILE* mus;
     FILE* fp_out;
     if(submit_args(argc,argv,&fp_in,&fp_out,&K_double,&max_iter_double) == 0) return 1;
     K = (int) K_double;
@@ -451,17 +458,17 @@ static PyObject* fit(PyObject *self, PyObject *args)
     int k;
     int max_iter;
     int epsilon;
-    char* merged_input;
-    int* mus_index_line;
+    char* data_filename;
+    char* mus_filename;
     /* This parses the Python arguments into a double (d)  variable named z and int (i) variable named n*/
-    if(!PyArg_ParseTuple(args, "i,i,i,s,iii", &k,&max_iter,&epsilon,&merged_input, &mus_index_line)) {
+    if(!PyArg_ParseTuple(args, "i,i,i,s,s", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
         printf("An Error Has Occurred\n");
         return NULL; /* In the CPython API, a NULL value is never valid for a
                         PyObject* so it is used to signal that an error has occurred. */
     }
 
 /* This builds the answer ("d" = Convert a C double to a Python floating point number) back into a python object */
-    return Py_BuildValue("d", K_mean(k,max_iter,epsilon,merged_input,mus_index_line)); /*  Py_BuildValue(...) returns a PyObject*  */
+    return Py_BuildValue("d", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
 }
 
 static PyMethodDef capiMethods[] = {
