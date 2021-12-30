@@ -27,7 +27,7 @@ typedef struct change{
 #define EPSILON 0.001
 
 /* function decleration*/
-double** initial_all_x_array(FILE* fp, int number_of_cord, int number_of_lines);
+double** read_data_from_file(FILE* fp, int number_of_cord, int number_of_lines);
 mu* initialze_mus_array(double** X, int K, int number_of_cord);
 int argmin(double* xi, mu* mus, int K, int number_of_cords);
 void add_x_to_mu(node* xi_node, mu* mui);
@@ -113,8 +113,8 @@ void free_memory(double** X, mu* mus, int num_of_X, int k){
 }
 
 /* create mu_array from first K xi from X
- output: return mu_array - the firt K xi from X */
-mu* initialze_mus_array(FILE* mus_file, int K,int number_of_cord){
+ output: return mu_array - the firt K xi from X */ 
+/*mu* initialze_mus_array(FILE* mus_file, int K,int number_of_cord){
     mu* mus = (mu*)calloc(K,sizeof(mu));
     int i, word;
     for(i =0; i< K; i++){
@@ -123,14 +123,14 @@ mu* initialze_mus_array(FILE* mus_file, int K,int number_of_cord){
             printf("An Error Has Occurred\n");
             return NULL;
         }
-        /* ---------------------------------------------------need to change it !---------------------------------------
         mus[i].xi_list = NULL;
         for(word =0; word < number_of_cord; word++){
             mus[i].mui[word] = X[i][word];
-        }*/
+        }
     }
     return mus;
 }
+*/
 
 /* outpot: the index of its clostest mu of xi*/
 int argmin(double* xi, mu* mus, int K, int number_of_cords){
@@ -455,20 +455,17 @@ int main(int argc, char **argv){
 
 static PyObject* fit(PyObject *self, PyObject *args)
 {
-    int k;
-    int max_iter;
-    int epsilon;
-    char* data_filename;
-    char* mus_filename;
+    int k,max_iter,epsilon;
+    char* data_filename, mus_filename;
     /* This parses the Python arguments into a double (d)  variable named z and int (i) variable named n*/
-    if(!PyArg_ParseTuple(args, "i,i,i,s,s", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
+    if(!PyArg_ParseTuple(args, "iiiss", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
         printf("An Error Has Occurred\n");
         return NULL; /* In the CPython API, a NULL value is never valid for a
                         PyObject* so it is used to signal that an error has occurred. */
     }
 
 /* This builds the answer ("d" = Convert a C double to a Python floating point number) back into a python object */
-    return Py_BuildValue("d", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
+    return Py_BuildValue("i", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
 }
 
 static PyMethodDef capiMethods[] = {
