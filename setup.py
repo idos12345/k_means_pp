@@ -2,7 +2,9 @@ from setuptools import setup, find_packages, Extension
 
 """
     Calling
-    $python setup.py build_ext --inplace
+    $
+    
+    
     will build the extension library in the current file.
 
     Calling

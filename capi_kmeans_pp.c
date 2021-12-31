@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN  /* For all # variants of unit formats (s#, y#, etc.) use Py_ssize_t rather than int. */
-#include <Python.h>       /* MUST include <Python.h>, this implies inclusion of the following standard headers:
-                             <stdio.h>, <string.h>, <errno.h>, <limits.h>, <assert.h> and <stdlib.h> (if available). */
+      /* MUST include <Python.h>, this implies inclusion of the following standard headers:       <stdio.h>, <string.h>, <errno.h>, <limits.h>, <assert.h> and <stdlib.h> (if available). */
+#include <Python.h>
 #include <math.h>         /* include <Python.h> has to be before any standard headers are included */
 #include <stdio.h>
 #include <string.h>
@@ -11,7 +11,6 @@ typedef struct node
     struct node* next;
     struct node* prev;
 } node;
-
 typedef struct mu{
     double* mui;
     node* xi_list;
@@ -40,10 +39,10 @@ int compute_number_of_x(FILE *fp );
 int initial_xi_liked_list( int number_of_lines, int K, int number_of_cords, mu* mus, double** X);
 change* update_changes_array(mu* mus, change* change_array, int number_of_cords, int K );
 void implementing_changes(mu* mus, int number_of_lines, change* change_array);
-int K_mean(int K, int max_iter, FILE* fp_in, FILE* fp_out);
+int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename);
 void free_memory(double** X, mu* mus, int num_of_X, int k);
 int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, double* max_iter);
-
+static PyObject* fit(PyObject *self, PyObject *args);
 
 
 /* create an array of pointers to xi calld X
@@ -332,16 +331,16 @@ void implementing_changes(mu* mus, int number_of_lines, change* change_array){
 }
 
 
-static int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename){
+int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename){
     double maxdelta = epsilon;
     int  iter =0, number_of_cords, number_of_lines, memory_alocate;
     change* change_array;
     double** X; 
     mu* mus;
-    File* data_file, mus_file;
+    FILE *data_file, *mus_file;
 
-    *data_file = fopen(data_filename,"r");
-    *mus_file = fopen(mus_filename,"r");
+    data_file = fopen(data_filename,"r");
+    mus_file = fopen(mus_filename,"r");
 
     number_of_cords = compute_number_of_cord(data_file);
     number_of_lines = compute_number_of_x(data_file);
@@ -357,7 +356,7 @@ static int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* m
         printf("An Error Has Occurred\n");
         return 1;
     }
-    mus = read_data_from_file(mus_file,number_of_cords,k);
+    mus = read_data_from_file(mus_file,number_of_cords,K);
     if(mus == NULL){
         printf("An Error Has Occurred\n");
         return 1;
@@ -388,7 +387,8 @@ static int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* m
         
         
     }
-    write_to_outputfile(mus,K,fp_out,number_of_cords);
+
+    write_to_outputfile(mus,K,mus_file,number_of_cords);
     free_memory(X,mus,number_of_lines,K);
     return 0;
 }
@@ -449,7 +449,7 @@ int main(int argc, char **argv){
     if(submit_args(argc,argv,&fp_in,&fp_out,&K_double,&max_iter_double) == 0) return 1;
     K = (int) K_double;
     max_iter = (int)max_iter_double;
-    K_mean(K,max_iter,fp_in, fp_out);
+   // K_mean(K,max_iter,fp_in, fp_out);
     return 0;
 }
 
@@ -469,7 +469,7 @@ static PyObject* fit(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef capiMethods[] = {
-    {"k_means_pp",                   /* the Python method name that will be used */
+    {"k_means",                   /* the Python method name that will be used */
       (PyCFunction) fit, /* the C-function that implements the Python function and returns static PyObject*  */
       METH_VARARGS,           /* flags indicating parametersaccepted for this function */
       PyDoc_STR("kmeans ++")}, /*  The docstring for the function */

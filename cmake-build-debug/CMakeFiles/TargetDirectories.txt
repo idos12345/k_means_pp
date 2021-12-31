@@ -1,0 +1,3 @@
+C:/Users/97254/OneDrive/Documents/University/software_project/kmeans_pp/cmake-build-debug/CMakeFiles/kmeans_pp.dir
+C:/Users/97254/OneDrive/Documents/University/software_project/kmeans_pp/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/97254/OneDrive/Documents/University/software_project/kmeans_pp/cmake-build-debug/CMakeFiles/rebuild_cache.dir

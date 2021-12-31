@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/capi_kmeans_pp.c.iml" filepath="$PROJECT_DIR$/.idea/capi_kmeans_pp.c.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/kmeans_pp.iml" filepath="$PROJECT_DIR$/.idea/kmeans_pp.iml" />
     </modules>
   </component>

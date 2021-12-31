@@ -1,0 +1,3 @@
+"C:\Program Files\JetBrains\CLion 2021.2.2\bin\cmake\win\bin\cmake.exe" -E rm -f CMakeFiles\kmeans_pp.dir/objects.a
+C:\PROGRA~2\MINGW-~1\I686-8~1.0-P\mingw32\bin\ar.exe cr CMakeFiles\kmeans_pp.dir/objects.a @CMakeFiles\kmeans_pp.dir\objects1.rsp
+C:\PROGRA~2\MINGW-~1\I686-8~1.0-P\mingw32\bin\gcc.exe -g -Wl,--whole-archive CMakeFiles\kmeans_pp.dir/objects.a -Wl,--no-whole-archive -o kmeans_pp.exe -Wl,--out-implib,libkmeans_pp.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\kmeans_pp.dir\linklibs.rsp
