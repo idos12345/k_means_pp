@@ -39,7 +39,7 @@ int compute_number_of_x(FILE *fp );
 int initial_xi_liked_list( int number_of_lines, int K, int number_of_cords, mu* mus, double** X);
 change* update_changes_array(mu* mus, change* change_array, int number_of_cords, int K );
 void implementing_changes(mu* mus, int number_of_lines, change* change_array);
-int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename);
+int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_filename);
 void free_memory(double** X, mu* mus, int num_of_X, int k);
 int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, double* max_iter);
 static PyObject* fit(PyObject *self, PyObject *args);
@@ -113,7 +113,7 @@ void free_memory(double** X, mu* mus, int num_of_X, int k){
 
 /* create mu_array from first K xi from X
  output: return mu_array - the firt K xi from X */ 
-/*mu* initialze_mus_array(FILE* mus_file, int K,int number_of_cord){
+mu* initialze_mus_array(double** X, int K, int number_of_cord){
     mu* mus = (mu*)calloc(K,sizeof(mu));
     int i, word;
     for(i =0; i< K; i++){
@@ -129,7 +129,7 @@ void free_memory(double** X, mu* mus, int num_of_X, int k){
     }
     return mus;
 }
-*/
+
 
 /* outpot: the index of its clostest mu of xi*/
 int argmin(double* xi, mu* mus, int K, int number_of_cords){
@@ -331,7 +331,8 @@ void implementing_changes(mu* mus, int number_of_lines, change* change_array){
 }
 
 
-int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_filename){
+int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_filename){
+
     double maxdelta = epsilon;
     int  iter =0, number_of_cords, number_of_lines, memory_alocate;
     change* change_array;
@@ -352,20 +353,29 @@ int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_file
     }
 
     X = read_data_from_file(data_file,number_of_cords,number_of_lines);
+
     if(X == NULL){
         printf("An Error Has Occurred\n");
         return 1;
     }
-    mus = read_data_from_file(mus_file,number_of_cords,K);
+    double **Y = read_data_from_file(mus_file,number_of_cords,K);
+
+    mus = initialze_mus_array(Y,K,number_of_cords);
     if(mus == NULL){
         printf("An Error Has Occurred\n");
         return 1;
     }
+
     memory_alocate= initial_xi_liked_list(number_of_lines, K, number_of_cords, mus,X);
     if(memory_alocate == 0) {
         printf("An Error Has Occurred\n");
         return 1;
     }
+
+
+    fclose(mus_file);
+    fclose(data_file);
+
     while (iter < max_iter && maxdelta >= epsilon)
     {
         change_array =(change*) calloc(number_of_lines,sizeof(change));
@@ -387,9 +397,14 @@ int K_mean(int K, int max_iter, int epsilon, char* data_filename, char* mus_file
         
         
     }
+    mus_file = fopen(mus_filename,"w");
 
     write_to_outputfile(mus,K,mus_file,number_of_cords);
+    fclose(mus_file);
+
     free_memory(X,mus,number_of_lines,K);
+
+
     return 0;
 }
 
@@ -456,9 +471,9 @@ int main(int argc, char **argv){
 static PyObject* fit(PyObject *self, PyObject *args)
 {
     int k,max_iter,epsilon;
-    char* data_filename, mus_filename;
+    char *data_filename, *mus_filename;
     /* This parses the Python arguments into a double (d)  variable named z and int (i) variable named n*/
-    if(!PyArg_ParseTuple(args, "iiiss", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
+    if(!PyArg_ParseTuple(args, "iidss", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
         printf("An Error Has Occurred\n");
         return NULL; /* In the CPython API, a NULL value is never valid for a
                         PyObject* so it is used to signal that an error has occurred. */

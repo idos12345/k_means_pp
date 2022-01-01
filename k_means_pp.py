@@ -4,10 +4,17 @@ import pandas as pd
 import mykmeanssp
 
 
-def calc_min_dist(rows, np_data, mus, curr_num_of_mus):
+def print_file(filename):
+    f = open(filename)
+
+    for line in f:
+        print(line)
+    f.close()
+
+def calc_min_dist(rows,mus, curr_num_of_mus,row_by_index_d):
     d_arr = np.zeros(rows)
     for l in range(rows):
-        dl = min([np.sum((find_row_by_index(l, np_data)[1:] - mus[i][1:]) ** 2) for i in range(curr_num_of_mus)])
+        dl = min([np.sum((row_by_index_d[l] - mus[i]) ** 2) for i in range(curr_num_of_mus)])
         d_arr[l] = dl
 
     return d_arr
@@ -18,17 +25,26 @@ def calc_probs(d_arr):
     return d_arr / d_sum
 
 
-def find_row_by_index(index, np_data):
+def create_row_by_index_d(np_data):
+    d = {}
     for row in np_data:
-        if int(row[0]) == index:
-            return row[1:]
-    return None
+         d[int(row[0])] = row[1:]
+
+    return d
 
 
-def creat_file(filename, data):
+def create_data_file(filename, data):
     file = open(filename, "w")
     for row in data:
         lst_row = row[1:].tolist()
+        mu = [(str(cord)) for cord in lst_row]
+        file.write(','.join(mu) + "\n")
+    file.close()
+
+def create_mus_file(filename, data):
+    file = open(filename, "w")
+    for row in data:
+        lst_row = row.tolist()
         mu = [(str(cord)) for cord in lst_row]
         file.write(','.join(mu) + "\n")
     file.close()
@@ -39,12 +55,14 @@ def find_mus(indexes, cols, np_data, k, rows):
     mus = np.zeros([k, cols - 1])
     chosen_xi = np.random.choice(indexes)
     mus_indexes.append(chosen_xi)
-    mus[0] = find_row_by_index(chosen_xi, np_data)
+    row_by_index_d = create_row_by_index_d(np_data)
+
+    mus[0] = row_by_index_d[chosen_xi]
     for i in range(1, k):
-        dist_arr = calc_min_dist(rows, np_data, mus, i)
+        dist_arr = calc_min_dist(rows, mus, i,row_by_index_d)
         probs_arr = calc_probs(dist_arr)
         chosen_xi = np.random.choice(indexes, p=probs_arr)
-        mus[i] = find_row_by_index(chosen_xi, np_data)
+        mus[i] = row_by_index_d[chosen_xi]
         mus_indexes.append(chosen_xi)
     mus_indexes_str = [(str(cord)) for cord in mus_indexes]
     return mus_indexes_str, mus
@@ -64,12 +82,11 @@ def creat_indexes(np_data):
     return indexes
 
 
-def k_means_pp(k, max_iter, eps, input_1_filename, input_2_filename):
+def k_means_pp(k, input_1_filename, input_2_filename):
     np.random.seed(0)
 
     np_data = creat_data(input_1_filename, input_2_filename)
-    print("np_data = ", np_data)
-    creat_file("merged_input", np_data)
+    create_data_file("merged_input.txt", np_data)
 
     rows = len(np_data)
     cols = len(np_data[0])
@@ -77,17 +94,16 @@ def k_means_pp(k, max_iter, eps, input_1_filename, input_2_filename):
     indexes = creat_indexes(np_data)
 
     mus_indexes_str, mus = find_mus(indexes, cols, np_data, k, rows)
-
-    creat_file("mus_file", mus)
+    create_mus_file("mus_file.txt", mus)
 
     print(','.join(mus_indexes_str))
 
-    return "merged_input", 'mus_file'
+    return "merged_input.txt", 'mus_file.txt'
 
 
 def submit_args():
     if len(sys.argv) != 5 and len(sys.argv) != 6:
-        print("Invalid Input!")
+        print("Invalid Input!1")
         return 0
     try:
         k = int(sys.argv[1])
@@ -99,7 +115,7 @@ def submit_args():
             input_2 = sys.argv[5]
         else:
             max_iter = 300
-            eps = sys.argv[2]
+            eps = float(sys.argv[2])
             input_1 = sys.argv[3]
             input_2 = sys.argv[4]
 
@@ -107,8 +123,8 @@ def submit_args():
         #     print("Invalid Input!")
         #     return 0
 
-        if max_iter <= 0 or k <= 0 or eps <= 0:
-            print("Invalid Input!")
+        if max_iter <= 0 or k <= 0 or eps < 0:
+            print("Invalid Input!2")
             return 0
 
         f_input_1 = open(input_1)
@@ -117,26 +133,29 @@ def submit_args():
         f_input_2.close()
 
     except (ValueError, OSError):
-        print("Invalid Input!")
+        print("Invalid Input!3")
         return 0
 
     return k, max_iter, eps, input_1, input_2
 
 
 def main():
-    file1 = "test_data\\input_1_db_1.txt"
-    file2 = "test_data\\input_1_db_1.txt"
-    # args = submit_args()
-    args = [3, 333, 0, file1, file2]
+
+    args = submit_args()
     if args == 0:
         return 0
     k, max_iter, eps, input_1, input_2 = args
+    print(args)
+    data_filename, mus_filename = k_means_pp(k, input_1, input_2)
+    print("went to C")
+    kmeans_succedd = mykmeanssp.k_means(k, max_iter, eps, data_filename, mus_filename)
 
-    data_filename, mus_filename = k_means_pp(k, max_iter, eps, input_1, input_2)
-    final_mus = mykmeanssp.k_means(k, max_iter, eps, data_filename, mus_filename)
-
-    print(final_mus)
-    return 0
+    if(kmeans_succedd == 0):
+        print_file(mus_filename)
+        return 0
+    else:
+        print("An Error Has Occurred")
+        return 1
 
 
 if __name__ == '__main__':
