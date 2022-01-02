@@ -42,7 +42,7 @@ int initial_xi_liked_list( int number_of_lines, int K, int number_of_cords, mu* 
 change* update_changes_array(mu* mus, change* change_array, int number_of_cords, int K );
 void implementing_changes(mu* mus, int number_of_lines, change* change_array);
 int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_filename);
-void free_memory(double** X, mu* mus, int num_of_X, int k);
+void free_memory(double** X,double** Y, mu* mus, int num_of_X, int k);
 int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, double* max_iter);
 static PyObject* fit(PyObject *self, PyObject *args);
 
@@ -472,7 +472,7 @@ int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, d
 }
 
 int main(int argc, char **argv){ 
-    double K_double, max_iter_double ;
+    /*double K_double, max_iter_double ;
     int K, max_iter;
     FILE* fp_in;
     FILE* mus;
@@ -480,7 +480,7 @@ int main(int argc, char **argv){
     if(submit_args(argc,argv,&fp_in,&fp_out,&K_double,&max_iter_double) == 0) return 1;
     K = (int) K_double;
     max_iter = (int)max_iter_double;
-   /*K_mean(K,max_iter,fp_in, fp_out);*/
+   K_mean(K,max_iter,fp_in, fp_out);*/
     return 0;
 }
 
