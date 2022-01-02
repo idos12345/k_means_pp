@@ -6,7 +6,6 @@ import mykmeanssp
 
 def print_file(filename):
     f = open(filename)
-
     for line in f:
         print(line)
     f.close()
@@ -16,24 +15,19 @@ def calc_min_dist(rows,mus, curr_num_of_mus,row_by_index_d):
     for l in range(rows):
         dl = min([np.sum((row_by_index_d[l] - mus[i]) ** 2) for i in range(curr_num_of_mus)])
         d_arr[l] = dl
-
     return d_arr
-
 
 def calc_probs(d_arr):
     d_sum = np.sum(d_arr)
     return d_arr / d_sum
 
-
 def create_row_by_index_d(np_data):
     d = {}
     for row in np_data:
          d[int(row[0])] = row[1:]
-
     return d
 
-
-def create_data_file(filename, data):
+def create_data_file_from_merged_inputs(filename, data):
     file = open(filename, "w")
     for row in data:
         lst_row = row[1:].tolist()
@@ -48,7 +42,6 @@ def create_mus_file(filename, data):
         mu = [(str(cord)) for cord in lst_row]
         file.write(','.join(mu) + "\n")
     file.close()
-
 
 def find_mus(indexes, cols, np_data, k, rows):
     mus_indexes = []
@@ -67,33 +60,30 @@ def find_mus(indexes, cols, np_data, k, rows):
     mus_indexes_str = [(str(cord)) for cord in mus_indexes]
     return mus_indexes_str, mus
 
-
-def creat_data(input_1_filename, input_2_filename):
+def creat_data_from_input_files(input_1_filename, input_2_filename):
     data_1 = pd.read_csv(input_1_filename, sep=",", header=None)
     data_2 = pd.read_csv(input_2_filename, sep=",", header=None)
     data = pd.merge(data_1, data_2, on=0)
     np_data = data.to_numpy()
     return np_data
 
-
 def creat_indexes(np_data):
     indexes = np_data[:, 0].astype(int)
     indexes.sort()
     return indexes
 
-
 def k_means_pp(k, input_1_filename, input_2_filename):
     np.random.seed(0)
 
-    np_data = creat_data(input_1_filename, input_2_filename)
-    create_data_file("merged_input.txt", np_data)
+    np_data = creat_data_from_input_files(input_1_filename, input_2_filename)
+    create_data_file_from_merged_inputs("merged_input.txt", np_data)
 
-    rows = len(np_data)
-    cols = len(np_data[0])
+    rows_number = len(np_data)
+    cols_number = len(np_data[0])
 
-    indexes = creat_indexes(np_data)
+    indexes_by_first_column = creat_indexes(np_data)
 
-    mus_indexes_str, mus = find_mus(indexes, cols, np_data, k, rows)
+    mus_indexes_str, mus = find_mus(indexes_by_first_column, cols_number, np_data, k, rows_number)
     create_mus_file("mus_file.txt", mus)
 
     print(','.join(mus_indexes_str))
@@ -108,7 +98,6 @@ def submit_args():
     try:
         k = int(sys.argv[1])
         if len(sys.argv) == 6:
-
             max_iter = int(sys.argv[2])
             eps = float(sys.argv[3])
             input_1 = sys.argv[4]
@@ -135,12 +124,10 @@ def submit_args():
     except (ValueError, OSError):
         print("Invalid Input!3")
         return 0
-
     return k, max_iter, eps, input_1, input_2
 
 
 def main():
-
     args = submit_args()
     if args == 0:
         return 0
@@ -157,8 +144,5 @@ def main():
         print("An Error Has Occurred")
         return 1
 
-
 if __name__ == '__main__':
     main()
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
