@@ -1,10 +1,11 @@
 #define PY_SSIZE_T_CLEAN  /* For all # variants of unit formats (s#, y#, etc.) use Py_ssize_t rather than int. */
-      /* MUST include <Python.h>, this implies inclusion of the following standard headers:       <stdio.h>, <string.h>, <errno.h>, <limits.h>, <assert.h> and <stdlib.h> (if available). */
+      /* MUST include <Python.h>, this implies inclusion of the following standard headers:       <stdio.h>, <string.h>, <errno.h>, <limits.h>, <assert.h> and <stdlib.h> if available. */
 #include <Python.h>
 #include <math.h>         /* include <Python.h> has to be before any standard headers are included */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 typedef struct node
 {
     double* xi;
@@ -47,48 +48,66 @@ int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, d
 static PyObject* fit(PyObject *self, PyObject *args);
 
 
+static PyObject* fit(PyObject *self, PyObject *args){
+    int k,max_iter,epsilon;
+    char *data_filename, *mus_filename;
+    /* This parses the Python arguments into a double (d)  variable named z and int (i) variable named n*/
+    if(!PyArg_ParseTuple(args, "iidss", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
+        printf("An Error Has Occurred\n");
+        return NULL; /* In the CPython API, a NULL value is never valid for a
+                        PyObject* so it is used to signal that an error has occurred. */
+    }
+    return Py_BuildValue("i", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
+}
+
+
+
+
+static PyMethodDef capiMethods[] = {
+        {"k_means",                   /* the Python method name that will be used */
+                (PyCFunction) fit, /* the C-function that implements the Python function and returns static PyObject*  */
+                METH_VARARGS,           /* flags indicating parametersaccepted for this function */
+                        PyDoc_STR("kmeans ++")}, /*  The docstring for the function */
+        {NULL, NULL, 0, NULL}     /* The last entry must be all NULL as shown to act as a
+                                 sentinel. Python looks for this entry to know that all
+                                 of the functions for the module have been defined. */
+};
+
+/* This initiates the module using the above definitions. */
+static PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "mykmeanssp", /* name of module */
+        NULL, /* module documentation, may be NULL */
+        -1,  /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+        capiMethods /* the PyMethodDef array from before containing the methods of the extension */
+};
+
+
+/*
+ * The PyModuleDef structure, in turn, must be passed to the interpreter in the module’s initialization function.
+ * The initialization function must be named PyInit_name(), where name is the name of the module and should match
+ * what we wrote in struct PyModuleDef.
+ * This should be the only non-static item defined in the module file
+ */
+PyMODINIT_FUNC
+PyInit_mykmeanssp(void){
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    if (!m) {
+        return NULL;
+    }
+    return m;
+}
+
+
 /* create an array of pointers to xi calld X
  output: read file and update  all_x_array -  an array of vertex , initial all mus to null*/
 double** read_data_from_file(FILE* fp, int number_of_cord, int number_of_lines){
-     /*double** X = (double**)calloc(number_of_lines , sizeof(double*));
-     int line_number, i;
-     double* xi;
-     char* line;
-     char* curr_number_start;
-     char* curr_comma;*/
-     rewind(fp);
-        /*line = (char*)calloc(1024,sizeof(char));
-        if (line == NULL){
-            printf("An Error Has Occurred\n");
-            return NULL;
-        }
-        for(line_number =0 ; line_number < number_of_lines; line_number++){
-            curr_number_start = line;
-            fscanf(fp, "%s",line);
-            xi = (double*) calloc(number_of_cord,sizeof(double));
-            if (xi == NULL){
-                printf("An Error Has Occurred\n");
-                return NULL; }
-            for ( i =0; i<number_of_cord -1; i++){
-                curr_comma = strchr((char*)curr_number_start,','); 
-                *curr_comma = '\0'; 
-                xi[i] = atof(curr_number_start); 
-                curr_number_start = ++curr_comma; 
-            }
-            xi[number_of_cord-1] = atof(curr_number_start);
-            X[line_number]= read_line_into_xi(number_of_cord,curr_number_start,xi); 
-        }
-        free(line);
-        fclose(fp);*/
-        return read_all_lines_to_X(number_of_lines, fp,number_of_cord);
-}
-
-/*read all lines into X*/
-double** read_all_lines_to_X(int number_of_lines, FILE* fp, int number_of_cord ){
     int line_number;
-    char* curr_number_start, line;
+    char *curr_number_start, *line;
     double* xi;
     double** X = (double**)calloc(number_of_lines , sizeof(double*));
+    rewind(fp);
     line = (char*)calloc(1024,sizeof(char));
     if (line == NULL || X == NULL){
         printf("An Error Has Occurred\n");
@@ -96,18 +115,22 @@ double** read_all_lines_to_X(int number_of_lines, FILE* fp, int number_of_cord )
     }
     for(line_number =0 ; line_number < number_of_lines; line_number++){
         curr_number_start = line;
-        fscanf(fp, "%s",line);
+        if(fscanf(fp, "%s",line)== EOF){
+            printf("An Error Has Occurred\n");
+            return NULL;
+        }
         xi = (double*) calloc(number_of_cord,sizeof(double));
         if (xi == NULL){
             printf("An Error Has Occurred\n");
             return NULL;
         }
-        X[line_number]= read_line_into_xi(number_of_cord,curr_number_start,xi); 
+        X[line_number]= read_line_into_xi(number_of_cord,curr_number_start,xi);
     }
     free(line);
-    fclose(fp);
     return X;
+
 }
+
 
 /* read line from file and write it to xi */
 double* read_line_into_xi(int number_of_cord, char* curr_number_start, double* xi ){
@@ -290,7 +313,6 @@ int write_to_outputfile(mu* mus, int K, FILE* fp_out, int number_of_cords ){
         }
     }
     fprintf(fp_out,"%s","\n");
-    fclose(fp_out);
     return 0; 
 }
 
@@ -378,7 +400,6 @@ int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_f
 
     number_of_cords = compute_number_of_cord(data_file);
     number_of_lines = compute_number_of_x(data_file);
-
     if(K > number_of_lines){
         printf("Invalid Input!\n");
         return 1;
@@ -388,23 +409,19 @@ int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_f
         printf("An Error Has Occurred\n");
         return 1;
     }
-
     double **Y = read_data_from_file(mus_file,number_of_cords,K);
     mus = initialze_mus_array(Y,K,number_of_cords);
     if(mus == NULL){
         printf("An Error Has Occurred\n");
         return 1;
     }
-
     memory_alocate= initial_xi_liked_list(number_of_lines, K, number_of_cords, mus,X);
     if(memory_alocate == 0) {
         printf("An Error Has Occurred\n");
         return 1;
     }
-
     fclose(mus_file);
     fclose(data_file);
-
     while (iter < max_iter && maxdelta >= epsilon){
         change_array =(change*) calloc(number_of_lines,sizeof(change));
         if(change_array == NULL ) {
@@ -412,8 +429,8 @@ int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_f
             return 1;
         }
         change_array = update_changes_array(mus,change_array,number_of_cords,K); /* update changes_array according new mus */
-        implementing_changes(mus, number_of_lines,change_array); /* link evrey xi to its new mu according to changes_array */ 
-        maxdelta = update_mus(mus,K,number_of_cords); /* compute new max delts */ 
+        implementing_changes(mus, number_of_lines,change_array); /* link evrey xi to its new mu according to changes_array */
+        maxdelta = update_mus(mus,K,number_of_cords); /* compute new max delts */
         if(maxdelta == -1) {
             printf("An Error Has Occurred\n");
             return 1;
@@ -432,8 +449,8 @@ int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_f
 
 /* submit args to vars, return 1 if successed else 0 */
 int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, double* max_iter){
-    char* input_file;
-    char* output_file;
+    char* input_file = NULL;
+    char* output_file = NULL;
     char* eptr;
     if (argc != 4 && argc != 5){
         printf("Invalid Input!\n");
@@ -471,62 +488,5 @@ int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, d
     return 1;
 }
 
-int main(int argc, char **argv){ 
-    /*double K_double, max_iter_double ;
-    int K, max_iter;
-    FILE* fp_in;
-    FILE* mus;
-    FILE* fp_out;
-    if(submit_args(argc,argv,&fp_in,&fp_out,&K_double,&max_iter_double) == 0) return 1;
-    K = (int) K_double;
-    max_iter = (int)max_iter_double;
-   K_mean(K,max_iter,fp_in, fp_out);*/
-    return 0;
-}
 
-static PyObject* fit(PyObject *self, PyObject *args){
-    int k,max_iter,epsilon;
-    char *data_filename, *mus_filename;
-    /* This parses the Python arguments into a double (d)  variable named z and int (i) variable named n*/
-    if(!PyArg_ParseTuple(args, "iidss", &k,&max_iter,&epsilon,&data_filename, &mus_filename)) {
-        printf("An Error Has Occurred\n");
-        return NULL; /* In the CPython API, a NULL value is never valid for a
-                        PyObject* so it is used to signal that an error has occurred. */
-    }
-    return Py_BuildValue("i", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
-}
 
-static PyMethodDef capiMethods[] = {
-    {"k_means",                   /* the Python method name that will be used */
-      (PyCFunction) fit, /* the C-function that implements the Python function and returns static PyObject*  */
-      METH_VARARGS,           /* flags indicating parametersaccepted for this function */
-      PyDoc_STR("kmeans ++")}, /*  The docstring for the function */
-    {NULL, NULL, 0, NULL}     /* The last entry must be all NULL as shown to act as a
-                                 sentinel. Python looks for this entry to know that all
-                                 of the functions for the module have been defined. */
-};
-
-/* This initiates the module using the above definitions. */
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "mykmeanssp", /* name of module */
-    NULL, /* module documentation, may be NULL */
-    -1,  /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
-    capiMethods /* the PyMethodDef array from before containing the methods of the extension */
-};
-
-/*
- * The PyModuleDef structure, in turn, must be passed to the interpreter in the module’s initialization function.
- * The initialization function must be named PyInit_name(), where name is the name of the module and should match
- * what we wrote in struct PyModuleDef.
- * This should be the only non-static item defined in the module file
- */
-PyMODINIT_FUNC
-PyInit_mykmeanssp(void){
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
-    if (!m) {
-        return NULL;
-    }
-    return m;
-}
