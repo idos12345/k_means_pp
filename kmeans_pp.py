@@ -117,14 +117,10 @@ def submit_args():
             input_1 = sys.argv[3]
             input_2 = sys.argv[4]
 
-        # if not isinstance(k,int) or not isinstance(max_iter,int) or max_iter <= 0 or k <= 0:
-        #     print("Invalid Input!")
-        #     return 0
-
         if max_iter <= 0 or k <= 0 or eps < 0:
             print("Invalid Input!2")
             return 0
-
+        
         f_input_1 = open(input_1)
         f_input_2 = open(input_2)
         f_input_1.close()
@@ -148,7 +144,7 @@ def main():
         print_file(mus_filename)
         return 0
     else:
-        print("An Error Has Occurred")
+        print("An Error Has Occurred") # mabey print twice this massege, one from C and one here
         return 1
 
 

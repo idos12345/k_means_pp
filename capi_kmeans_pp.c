@@ -47,7 +47,6 @@ void free_memory(double** X,double** Y, mu* mus, int num_of_X, int k);
 int submit_args(int argc, char **argv, FILE** fp_in, FILE** fp_out, double* k, double* max_iter);
 static PyObject* fit(PyObject *self, PyObject *args);
 
-
 static PyObject* fit(PyObject *self, PyObject *args){
     int k,max_iter,epsilon;
     char *data_filename, *mus_filename;
@@ -59,9 +58,6 @@ static PyObject* fit(PyObject *self, PyObject *args){
     }
     return Py_BuildValue("i", K_mean(k,max_iter,epsilon,data_filename,mus_filename)); /*  Py_BuildValue(...) returns a PyObject*  */
 }
-
-
-
 
 static PyMethodDef capiMethods[] = {
         {"k_means",                   /* the Python method name that will be used */
@@ -82,7 +78,6 @@ static PyModuleDef moduledef = {
         capiMethods /* the PyMethodDef array from before containing the methods of the extension */
 };
 
-
 /*
  * The PyModuleDef structure, in turn, must be passed to the interpreter in the module’s initialization function.
  * The initialization function must be named PyInit_name(), where name is the name of the module and should match
@@ -98,7 +93,6 @@ PyInit_mykmeanssp(void){
     }
     return m;
 }
-
 
 /* create an array of pointers to xi calld X
  output: read file and update  all_x_array -  an array of vertex , initial all mus to null*/
@@ -130,7 +124,6 @@ double** read_data_from_file(FILE* fp, int number_of_cord, int number_of_lines){
     return X;
 
 }
-
 
 /* read line from file and write it to xi */
 double* read_line_into_xi(int number_of_cord, char* curr_number_start, double* xi ){
@@ -422,6 +415,7 @@ int K_mean(int K, int max_iter, double epsilon, char* data_filename, char* mus_f
     }
     fclose(mus_file);
     fclose(data_file);
+    
     while (iter < max_iter && maxdelta >= epsilon){
         change_array =(change*) calloc(number_of_lines,sizeof(change));
         if(change_array == NULL ) {
