@@ -8,6 +8,7 @@ def print_file(filename):
     f = open(filename)
     for line in f:
         print(line[:-1])
+    print()
     f.close()
 
 
@@ -68,10 +69,15 @@ def find_mus(indexes, cols, np_data, k, rows):
 
 
 def create_data_from_input_files(input_1_filename, input_2_filename):
-    data_1 = pd.read_csv(input_1_filename, sep=",", header=None)
-    data_2 = pd.read_csv(input_2_filename, sep=",", header=None)
-    data = pd.merge(data_1, data_2, on=0)
-    np_data = data.to_numpy()
+    try:
+        data_1 = pd.read_csv(input_1_filename, sep=",", header=None)
+        data_2 = pd.read_csv(input_2_filename, sep=",", header=None)
+        data = pd.merge(data_1, data_2, on=0)
+        np_data = data.to_numpy()
+    except:
+        print("Invalid Input!")
+        return 1
+
     return np_data
 
 
@@ -88,6 +94,11 @@ def k_means_pp(k, input_1_filename, input_2_filename):
     create_data_file_from_merged_inputs("merged_input.txt", np_data)
 
     rows_number = len(np_data)
+
+    if(k > rows_number):
+        print("Invalid Input!")
+        return 1
+
     cols_number = len(np_data[0])
 
     indexes_by_first_column = create_indexes(np_data)
@@ -96,14 +107,13 @@ def k_means_pp(k, input_1_filename, input_2_filename):
     create_mus_file("mus_file.txt", mus)
 
     print(','.join(mus_indexes_str))
-
-    return "merged_input.txt", 'mus_file.txt'
+    return 0
 
 
 def submit_args():
     if len(sys.argv) != 5 and len(sys.argv) != 6:
-        print("Invalid Input!1")
-        return 0
+        print("Invalid Input!")
+        return 1
     try:
         k = int(sys.argv[1])
         if len(sys.argv) == 6:
@@ -118,28 +128,37 @@ def submit_args():
             input_2 = sys.argv[4]
 
         if max_iter <= 0 or k <= 0 or eps < 0:
-            print("Invalid Input!2")
-            return 0
-        
+            print("Invalid Input!")
+            return 1
+
         f_input_1 = open(input_1)
         f_input_2 = open(input_2)
         f_input_1.close()
         f_input_2.close()
 
     except (ValueError, OSError):
-        print("Invalid Input!3")
-        return 0
+        print("Invalid Input!")
+        return 1
     return k, max_iter, eps, input_1, input_2
 
 
 def main():
     args = submit_args()
-    if args == 0:
-        return 0
+    mus_filename = 'mus_file.txt'
+    data_filename = "merged_input.txt"
+    if args == 1:
+        return 1
     k, max_iter, eps, input_1, input_2 = args
-    data_filename, mus_filename = k_means_pp(k, input_1, input_2)
-    kmeans_succeed = mykmeanssp.k_means(k, max_iter, eps, data_filename, mus_filename)
 
+
+    if (k_means_pp(k, input_1, input_2) == 1):
+        return 1
+
+    try:
+        kmeans_succeed = mykmeanssp.k_means(k, max_iter, eps, data_filename, mus_filename)
+    except:
+        print('An Error Has Occurred')
+        return 1
     if kmeans_succeed == 0:
         print_file(mus_filename)
         return 0
